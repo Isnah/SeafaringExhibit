@@ -1,0 +1,174 @@
+$bg: #fff;
+
+$secondary-accent: #4c7383;
+$primary-accent: #2F4BA0;
+
+$hd-min-width: 60vw;
+$hd-max-width: 100vw;
+
+$debug-bg: red;
+$debug-color: white;
+
+* {
+  padding: 0 0;
+  margin: 0 0;
+  //border-style: solid;
+}
+
+body {
+
+  font-family: Verdana,Arial,Helvetica,sans-serif;
+  font-size: 12pt;
+  line-height: 1.2em;
+
+  #map {
+    height: 100vh;
+    z-index: 40;
+
+    margin: 0 0;
+    padding: 0 0;
+  }
+
+  .clearfix:after {
+    content: "";
+    clear:both;
+    display:table;
+  }
+
+  .shipimg {
+    width: 20em;
+  }
+
+  header {
+    background-color: $bg;
+    position: fixed;
+    z-index: 45;
+
+    font-size: 12pt;
+
+    padding: 1em;
+    border-radius: 0 0 3em 0;
+
+    min-width: $hd-min-width;
+    max-width: $hd-max-width;
+
+    color: $primary-accent;
+    border-color: $primary-accent;
+    border-style: none solid solid none;
+
+    button {
+      background-color: inherit;
+      background-position: center;
+      background-size: 3em 1em;
+      background-repeat: no-repeat;
+      color: inherit;
+      font-size: 2em;
+      width: 4em;
+      height: 1.3em;
+    }
+
+    #start_btn {
+      background-image: url(../graphics/play_btn.png);
+    }
+
+    #stop_btn {
+      background-image: url(../graphics/pause_btn.png);
+    }
+
+    #faster_btn {
+      background-image: url(../graphics/faster_btn.png);
+    }
+
+    #slower_btn {
+      background-image: url(../graphics/slower_btn.png);
+    }
+
+    button:hover {
+      background-color: $primary-accent;
+      color: $bg;
+    }
+
+    #logo {
+      float: left;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    div {
+      #control_container {
+        overflow:hidden;
+        float: left;
+      }
+
+      .button-container {
+        text-align: center;
+        margin: 1em 0.5em;
+      }
+
+      .output {
+        display: inline-block;
+
+        text-align: center;
+
+        .time {
+
+        }
+      }
+
+      .dropdown {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        margin: 0 3em 0 0;
+
+        button {
+          border: none;
+          border-radius: 1em 1em 0 0;
+        }
+      }
+    }
+
+    .dropdown-content {
+      display: none;
+      position:absolute;
+      min-width: 100px;
+      color: black;
+      text-decoration: none;
+      background-color: $bg;
+      z-index: 50;
+
+      ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+
+        li a {
+          color: $secondary-accent;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        li:hover {
+          background-color: $secondary-accent;
+          a {
+            color: $bg;
+          }
+        }
+      }
+    }
+  }
+}
+
+.debug {
+  background-color: $debug-bg;
+  color: $debug-color;
+  width: auto;
+  height: auto;
+}
+
+button.debug:hover {
+  background-color: $debug-color;
+  color: $debug-bg;
+}
