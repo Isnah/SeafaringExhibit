@@ -13,7 +13,7 @@ var event_icon = L.icon({
 var shipIcon = L.icon({
   iconUrl: 'templates/icons/ship-icon.png',
 
-  iconSize: [12,12],
+  iconSize: [14,14],
   shadowSize: [0,0],
   iconAnchor: [6,6],
   shadowAnchor: [0,0],

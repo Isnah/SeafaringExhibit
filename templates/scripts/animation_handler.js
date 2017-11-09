@@ -147,14 +147,16 @@ function createJourneysAlt(data) {
 
   let id_ctr = 0;
 
-  for(let i = 0; i < s.length; i++) {
-    ship_sightings.append([]);
+  for(let i = 0; i < s.length+1; i++) {
+    ship_sightings.push([]);
   }
 
   for(let i = 0; i < evs.length; i++) {
     let ship = evs[i].shipid;
-    ship_sightings[ship].append(evs[i]);
+    ship_sightings[ship].push(evs[i]);
   }
+
+  console.log(ship_sightings[5]);
 
   for(let i = 0; i < ship_sightings.length; i++) {
     ship_evs = ship_sightings[i];
@@ -164,11 +166,15 @@ function createJourneysAlt(data) {
             : 0;
     });
 
+    if(ship_evs.length < 1) {
+      continue;
+    }
+
     if(ship_evs[0].type === "Arrival") {
       let arr = new Date(ship_evs[0].date).getTime() + 21600000
       let rt = get_route(ship_evs[0].dest_orig.id, ship_evs[0].port.id, r);
       if(rt === undefined) {
-        get_route_reversed(ship_evs[0].port.id, ship[0].dest_orig.id, r);
+        rt = get_route_reversed(ship_evs[0].port.id, ship_evs[0].dest_orig.id, r);
       }
       let dep = arr - rt.length*3600000/assumed_avg_ship_speed;
       var jo = {
@@ -184,41 +190,192 @@ function createJourneysAlt(data) {
         "ship": i
       };
       id_ctr++;
-      journeys.append(jo);
+      journeys.push(jo);
     }
     for(let j = 1; j < ship_evs.length; j++) {
       if(ship_evs[j].type === "Arrival") {
         if(ship_evs[j-1].type === "Departure") {
-          if(ship_evs[j].dest_orig.id === ship_evs[j-1].port.id && ship_evs[j].port.id === ship_evs[j-1].dest_orig.id) {
+          let dep = new Date(ship_evs[j-1].date).getTime() + assumed_dep_time;
+          let arr = new Date(ship_evs[j].date).getTime() + assumed_arr_time;
+
+          if(ship_evs[j].port.id === ship_evs[j-1].port.id && ship_evs[j].dest_orig.id === ship_evs[j-1].dest_orig.id) {
+            // Return journey
+            if(ship_evs[j].dest_orig.id !== 0) {
+              // East Asian return journey
+              let rt_1 = get_route(ship_evs[j-1].port.id, ship_evs[j-1].dest_orig.id, r);
+              let rt_2 = get_route_reversed(ship_evs[j].port.id, ship_evs[j].dest_orig.id, r);
+              let total_length = rt_1.length + rt_2.length;
+              let arr_via = dep + (arr - dep - assumed_load_time)/2;
+              let dep_via = arr_via + assumed_load_time;
+              var jo_1 = {
+                "id": id_ctr,
+                "from": ship_evs[j-1].port,
+                "from_name": ship_evs[j-1].port.name,
+                "to": ship_evs[j-1].dest_orig,
+                "to_name": ship_evs[j-1].dest_orig_name,
+                "departure": dep,
+                "arrival": arr_via,
+                "route": rt_1,
+                "time_security": "Departure",
+                "ship": i
+              };
+              id_ctr++;
+              journeys.push(jo_1);
+              var jo_2 = {
+                "id": id_ctr,
+                "from": ship_evs[j].dest_orig,
+                "from_name": ship_evs[j].dest_orig_name,
+                "to": ship_evs[j].port,
+                "to_name": ship_evs[j].port.name,
+                "departure": dep_via,
+                "arrival": arr,
+                "route": rt_2,
+                "time_security": "Arrival",
+                "ship": i
+              };
+              id_ctr++;
+              journeys.push(jo_2);
+            } else {
+              // Westward return
+              let rt_1, rt_2, arr_west, dep_west;
+              rt_1 = get_route(ship_evs[j-1].port.id, ship_evs[j-1].dest_orig.id, r);
+              rt_2 = get_route_reversed(ship_evs[j].port.id, ship_evs[j].dest_orig.id, r);
+
+              arr_west = dep + rt_1.length * 3600000 / assumed_avg_ship_speed;
+              dep_west = arr - rt_2.length * 3600000 / assumed_avg_ship_speed;
+
+              if(arr_west < dep_west) {
+                dep_west = dep + (arr - dep + assumed_load_time)/2;
+                arr_west = dep_west - assumed_load_time;
+              }
+
+              var jo_1 = {
+                "id": id_ctr,
+                "from": ship_evs[j-1].port,
+                "from_name": ship_evs[j-1].port.name,
+                "to": ship_evs[j-1].dest_orig,
+                "to_name": ship_evs[j-1].dest_orig_name,
+                "departure": dep,
+                "arrival": arr_west,
+                "route": rt_1,
+                "time_security": "Departure",
+                "ship": i
+              };
+              id_ctr++;
+              journeys.push(jo_1);
+              jo_2 = {
+                "id": id_ctr,
+                "from": ship_evs[j].dest_orig,
+                "from_name": ship_evs[j].dest_orig_name,
+                "to": ship_evs[j].port,
+                "to_name": ship_evs[j].port.id,
+                "departure": dep_west,
+                "arrival": arr,
+                "route": rt_2,
+                "time_security": "Arrival",
+                "ship": i
+              };
+              id_ctr++;
+              journeys.push(jo_2);
+            }
+          } else if((ship_evs[j].dest_orig.id === ship_evs[j-1].port.id && ship_evs[j].port.id === ship_evs[j-1].dest_orig.id) ||
+             ((ship_evs[j-1].dest_orig.id === 0 ? ship_evs[j].dest_orig.id !== 0 : ship_evs[j].dest_orig.id === 0) &&
+              (ship_evs[j].dest_orig.id === ship_evs[j-1].port.id || ship_evs[j].port.id === ship_evs[j-1].dest_orig.id))) {
+            // Direct route between events
             var jo = {
               "id": id_ctr,
               "from": ship_evs[j-1].port,
               "from_name": ship_evs[j-1].port.name,
               "to": ship_evs[j].port,
               "to_name": ship_evs[j].port.name,
-              "departure": new Date(ship_evs[j-1].date).getTime() + assumed_dep_time,
-              "arrival": new Date(ship_evs[j].date).getTime() + assumed_arr_time,
-              "route": get_route(from.id, to.id, r),
+              "departure": dep,
+              "arrival": arr,
+              "route": get_route(ship_evs[j-1].port.id, ship_evs[j].port.id, r),
               "time_security": "Both",
               "ship": i
             };
             id_ctr++;
-            journeys.append(jo);
-          } else if(ship_evs[j].dest_orig.id !== ship_evs[j-1].port.id && ship_evs[j].port.id !== ship_evs[j-1].dest_orig.id) {
-            // TODO
-            console.warn("More than one in between. Not implemented.");
+            journeys.push(jo);
+          } else if(ship_evs[j].dest_orig.id !== ship_evs[j-1].port.id && ship_evs[j].port.id !== ship_evs[j-1].dest_orig.id && ship_evs[j].dest_orig.id !== ship_evs[j-1].dest_orig.id) {
+            // Possibly more than one in between.
+
+            if(ship_evs[j].dest_orig.id === 0 ? ship_evs[j-1].dest_orig.id !== 0 : ship_evs[j-1].dest_orig.id === 0) {
+              // One of the two is unknown, assuming single stop.
+              var from = ship_evs[j-1].port;
+              var to = ship_evs[j].port;
+              var via = ship_evs[j].dest_orig.id === 0 ? ship_evs[j-1].dest_orig : ship_evs[j].dest_orig;
+
+              var rt_1 = get_route(from.id, via.id, r);
+              var rt_2 = get_route_reversed(to.id, via.id, r);
+
+              if(dep + (rt_1.length+rt_2.length)*3600000/assumed_avg_ship_speed > arr) {
+                // The previous sighting must have been an in between location instead.
+                rt_1 = get_route(from.id, to.id, r);
+                var jo = {
+                  "id": id_ctr,
+                  "from": from,
+                  "from_name": ship_evs[j].dest_orig.id === 0 ? ship_evs[j-1].dest_orig_name : ship_evs[j].dest_orig_name,
+                  "to": to,
+                  "to_name": to.name,
+                  "departure": dep,
+                  "arrival": arr,
+                  "route": rt_1,
+                  "time_security": "Both",
+                  "ship": i
+                };
+                id_ctr++;
+                journeys.push(jo);
+              } else {
+                let total_length = rt_1.length + rt_2.length;
+                let via_point = rt_1.length/total_length;
+
+                var arr_via = dep + (arr - dep)*via_point - assumed_load_time/2;
+                var dep_via = arr_via + assumed_load_time;
+
+                var jo_1 = {
+                  "id": id_ctr,
+                  "from": from,
+                  "from_name": from.name,
+                  "to": via,
+                  "to_name": ship_evs[j].dest_orig.id === 0 ? ship_evs[j-1].dest_orig_name : ship_evs[j].dest_orig_name,
+                  "departure": dep,
+                  "arrival": arr_via,
+                  "route": rt_1,
+                  "time_security": "Departure",
+                  "ship": i
+                };
+                id_ctr++;
+                journeys.push(jo_1);
+                var jo_2 = {
+                  "id": id_ctr,
+                  "from": via,
+                  "from_name": ship_evs[j].dest_orig.id === 0 ? ship_evs[j-1].dest_orig_name : ship_evs[j].dest_orig_name,
+                  "to": to,
+                  "to_name": to.name,
+                  "departure": dep_via,
+                  "arr": arr,
+                  "route": rt_2,
+                  "time_security": "Arrival",
+                  "ship": i
+                };
+                id_ctr++;
+                journeys.push(jo_2);
+              }
+            } else {
+              console.warn("More than one in between. Not implemented.");
+              console.log(ship_evs[j-1]);
+              console.log(ship_evs[j]);
+            }
           } else {
             let rt_1, rt_2, total_length, via_point, arr_via, dep_via;
-            let dep = new Date(ship_evs[j-1].date).getTime() + assumed_dep_time;
-            let arr = new Date(ship_evs[j].date).getTime() + assumed_arr_time;
             if(ship_evs[j].dest_orig.id !== ship_evs[j-1].port.id) {
               rt_1 = get_route(ship_evs[j-1].port.id, ship_evs[j].dest_orig.id, r);
-              rt_2 = get_route_reversed(ship_evs[j].dest_orig.id, ship_evs[j].port.id, r);
+              rt_2 = get_route_reversed(ship_evs[j].port.id, ship_evs[j].dest_orig.id, r);
               total_length = rt_1.length + rt_2.length;
               via_point = rt_1.length / total_length;
             } else if(ship_evs[j].port.id !== ship_evs[j-1].dest_orig.id) {
               rt_1 = get_route(ship_evs[j-1].port.id, ship_evs[j-1].dest_orig.id, r);
-              rt_2 = get_route_reversed(ship_evs[j].port_id, ship_evs[j-1].dest_orig.id, r);
+              rt_2 = get_route_reversed(ship_evs[j].port.id, ship_evs[j-1].dest_orig.id, r);
               total_length = rt_1.length + rt_2.length;
               via_point = rt_1.length / total_length;
             }
@@ -237,7 +394,7 @@ function createJourneysAlt(data) {
               "ship": i
             };
             id_ctr++;
-            jo_2 = {
+            var jo_2 = {
               "id": id_ctr,
               "from": ship_evs[j].dest_orig,
               "from_name": ship_evs[j].dest_orig_name,
@@ -250,13 +407,111 @@ function createJourneysAlt(data) {
               "ship": i
             };
             id_ctr++;
+            journeys.push(jo_1);
+            journeys.push(jo_2);
           }
         } else {
-          // TODO Preceding event is Arrival
+          // Preceding event is Arrival
+          var dep = new Date(ship_evs[j-1].date).getTime() + assumed_arr_time + assumed_load_time;
+          var arr = new Date(ship_evs[j].date).getTime() + assumed_arr_time;
+          var from = ship_evs[j-1].port;
+          var to = ship_evs[j].port;
+          var via = ship_evs[j].dest_orig.id === 0 ? ship_evs[j-1].dest_orig : ship_evs[j].dest_orig;
+          var rt_1 = get_route(from.id, via.id, r);
+          var rt_2 = get_route_reversed(to.id, via.id, r);
+
+          if(ship_evs[j].dest_orig.id === ship_evs[j-1].port.id ||
+             ship_evs[j].dest_orig.id === 0) {
+            // direct journey, or previous entry was intermediate stop
+            var rt = get_route(ship_evs[j-1].port.id, ship_evs[j].port.id, r);
+            var jo = {
+              "id": id_ctr,
+              "from": ship_evs[j-1].port,
+              "from_name": ship_evs[j].dest_orig_name,
+              "to": ship_evs[j].port,
+              "to_name": ship_evs[j].port.name,
+              "departure": dep,
+              "arrival": arr,
+              "route": rt,
+              "time_security": "Arrival",
+              "ship": i
+            };
+            id_ctr++;
+            journeys.push(jo);
+            if(rt === undefined){
+              console.error(jo);
+              console.log(ship_evs[j-1]);
+              console.log(ship_evs[j]);
+            }
+          } else if((rt_1.length+rt_2.length)*3600000/(arr-dep) > assumed_avg_ship_speed) {
+            console.error("FISHY BUSINESS. Double arrival, and distances and times don't add up");
+            console.log(ship_evs[j-1]);
+            console.log(ship_evs[j]);
+          } else {
+            // Single stop in between
+            let total_length = rt_1.length+rt_2.length;
+            let via_point = rt_1.length/total_length;
+            var arr_via = dep + (arr-dep)*via_point - assumed_load_time/2;
+            var dep_via = arr_via + assumed_load_time;
+            var jo_1 = {
+              "id": id_ctr,
+              "from": from,
+              "from_name": from.name,
+              "to": via,
+              "to_name": ship_evs[j].dest_orig_name,
+              "departure": dep,
+              "arrival": arr_via,
+              "route": rt_1,
+              "time_security": "None",
+              "ship": i
+            };
+            id_ctr++;
+            journeys.push(jo_1);
+            var jo_2 = {
+              "id": id_ctr,
+              "from": via,
+              "from_name":ship_evs[j].dest_orig.name,
+              "to": to,
+              "to_name": to.name,
+              "departure": dep_via,
+              "arrival": arr,
+              "route": rt_2,
+              "time_security": "Arrival",
+              "ship": i
+            };
+            id_ctr++;
+            journeys.push(jo_2);
+          }
         }
       } else {
-        // TODO Event is Departure. Should ignore.
+        // TODO Event is Departure. Should ignore?
       }
+
+      let last_ev = ship_evs[ship_evs.length - 1];
+      if(last_ev.type === "Departure") {
+        var dep = new Date(last_ev.date).getTime() + assumed_dep_time;
+        var rt = get_route(last_ev.port.id, last_ev.dest_orig.id, r);
+        var jo = {
+          "id": id_ctr,
+          "from": last_ev.port.id,
+          "from_name": last_ev.port.name,
+          "to": last_ev.dest_orig,
+          "to_name": last_ev.dest_orig_name,
+          "departure": dep,
+          "arrival": dep + rt.length * 3600000 / assumed_avg_ship_speed,
+          "route": rt,
+          "time_security": "Departure",
+          "ship": i
+        };
+        id_ctr++;
+        journeys.push(jo);
+      }
+    }
+  }
+
+  for(let i = 0; i < journeys.length; i++) {
+    if(journeys[i].route === undefined) {
+      console.error(journeys[i]);
     }
   }
 
@@ -899,11 +1154,12 @@ async function animate_events(data) {
   var previous_date = current_date.getDate();
   var journeys = [];
   var matched_events = [];
-  var result = createJourneys(data, date_to_str(new Date(start_date.getTime())),
-                              date_to_str(new Date(start_date.getTime() + six_months)),
-                              journeys, matched_events);
-  journeys = result[0];
-  matched_events = result[1];
+  // var result = createJourneys(data, date_to_str(new Date(start_date.getTime())),
+  //                             date_to_str(new Date(start_date.getTime() + six_months)),
+  //                             journeys, matched_events);
+  // journeys = result[0];
+  // matched_events = result[1];
+  journeys = createJourneysAlt(data);
   console.log(journeys);
   console.log(matched_events);
 
@@ -919,13 +1175,13 @@ async function animate_events(data) {
     $("#current_time").val(current_date.toISOString().substr(0,16));
     console.log("frame");
 
-    if(current_date.getTime() > last_checked_journeys + six_months/2 && matched_events.length < data.events.length) {
-      result = createJourneys(data, date_to_str(current_date), date_to_str(new Date(current_date.getTime() + six_months)),
-                              journeys, matched_events);
-      journeys = result[0];
-      matched_events = result[1];
-      last_checked_journeys = current_date.getTime();
-    }
+    // if(current_date.getTime() > last_checked_journeys + six_months/2 && matched_events.length < data.events.length) {
+    //   result = createJourneys(data, date_to_str(current_date), date_to_str(new Date(current_date.getTime() + six_months)),
+    //                           journeys, matched_events);
+    //   journeys = result[0];
+    //   matched_events = result[1];
+    //   last_checked_journeys = current_date.getTime();
+    // }
 
     var date_string = date_to_str(current_date);
 
