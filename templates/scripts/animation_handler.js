@@ -739,7 +739,7 @@ function update_ship_info(journeys, ships) {
         sh.crew = jo.crew;
         sh.crew_obs = jo.arrival;
       }
-      if(sh.cargo !== jo.cargo && jo.cargo !== "NONE") {
+      if(sh.cargo !== jo.cargo && jo.cargo !== "NONE" && jo.cargo !== "") {
         sh.cargo = jo.cargo;
         sh.cargo_obs = jo.arrival;
       }
