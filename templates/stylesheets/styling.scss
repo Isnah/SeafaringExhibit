@@ -84,8 +84,8 @@ body {
     }
 
     button:hover {
+      color: $bg; 
       background-color: $primary-accent;
-      color: $bg;
     }
 
     #logo {

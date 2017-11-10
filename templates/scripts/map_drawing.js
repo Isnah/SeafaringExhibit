@@ -270,9 +270,30 @@ function drawJourneys(journeys, ships, routes, time) {
         marker.marker.closePopup();
         let popupContent = '<div class="shippopup"><img src="/api/ships/photo/';
         let ship = ships.filter(ship_filter)[0];
-        popupContent += ship.name + '" class="shipimg"/><h2>Skip: ';
-        var ship_name = ship === undefined ? "Ukjent" : ship.name;
-        popupContent += ship_name + "</h2><p>På vei fra " + jo.from_name + " til " + jo.to_name + "</p></div>";
+        popupContent += ship.name + '" class="shipimg"/><h2>';
+        var ship_name = ship === undefined ? "Ukjent skip" : ship.name;
+        popupContent += ship_name + "</h2><p>På vei fra " + jo.from_name + " til " + jo.to_name + "</p>";
+        popupContent += "<p>Sikker dato for ";
+        popupContent += jo.time_security === "Departure" ? "avgang."
+                      : jo.time_security === "Arrival" ? "ankomst."
+                      : jo.time_security === "Both" ? "avgang og ankomst."
+                      : "hverken avgang eller ankomst."
+        if(jo.captain !== undefined && jo.captain !== "NONE") {
+          popupContent += "</p><p>Kaptein: " + jo.captain + " (notert som kaptein for denne reisen)";
+        } else if(ship.captain !== undefined && ship.captain !== "NONE" && ship.captain !== "") {
+          popupContent += "</p><p>Kaptein: " + ship.captain + " (notert som last " + new Date(ship.captain_obs).toISOString().substr(0,10) + ")";
+        }
+        if(jo.crew !== undefined && jo.crew !== 0) {
+          popupContent += "</p><p>Mannskap: " + jo.crew +" (notert som mannskap for denne reisen)";
+        } else if(ship.crew !== undefined && ship.crew !== "NONE" && ship.crew !== "") {
+          popupContent += "</p><p>Mannskap: " + "(notert som last " + new Date(ship.crew_obs).toISOString().substr(0,10) + ")";
+        }
+        if(jo.cargo !== undefined && jo.cargo !== "NONE" && jo.cargo !== "") {
+          popupContent += "</p><p>Last: " + jo.cargo + " (notert som last for denne reisen)";
+        } else if(ship.cargo !== undefined && ship.cargo !== "NONE" && ship.cargo !== "") {
+          popupContent += "</p><p>Last: " + ship.cargo + " (notert som last " + new Date(ship.cargo_obs).toISOString().substr(0,10) + ")";
+        }
+        popupContent += "</p></div>";
         marker.marker.bindPopup(popupContent);
       }
     } else {
@@ -290,9 +311,30 @@ function drawJourneys(journeys, ships, routes, time) {
       let ship = ships.filter(function(v) {
         return v.id === jo.ship;
       })[0];
-      popupContent += ship.name + '" class="shipimg"/><h2>Skip: ';
-      var ship_name = ship === undefined ? "Ukjent" : ship.name;
-      popupContent += ship_name + "</h2><p>På vei fra " + jo.from_name + " til " + jo.to_name + "</p></div>";
+      popupContent += ship.name + '" class="shipimg"/><h2>';
+      var ship_name = ship === undefined ? "Ukjent skip" : ship.name;
+      popupContent += ship_name + "</h2><p>På vei fra " + jo.from_name + " til " + jo.to_name + "</p>";
+      popupContent += "<p>Sikker dato for ";
+      popupContent += jo.time_security === "Departure" ? "avgang."
+                    : jo.time_security === "Arrival" ? "ankomst."
+                    : jo.time_security === "Both" ? "avgang og ankomst."
+                    : "hverken avgang eller ankomst."
+      if(jo.captain !== undefined && jo.captain !== "NONE") {
+        popupContent += "</p><p>Kaptein: " + jo.captain + " (notert som kaptein for denne reisen)";
+      } else if(ship.captain !== undefined && ship.captain !== "NONE" && ship.captain !== "") {
+        popupContent += "</p><p>Kaptein: " + ship.captain + " (notert som last " + new Date(ship.captain_obs).toISOString().substr(0,10) + ")";
+      }
+      if(jo.crew !== undefined && jo.crew !== 0) {
+        popupContent += "</p><p>Mannskap: " + jo.crew +" (notert som mannskap for denne reisen)";
+      } else if(ship.crew !== undefined && ship.crew !== "NONE" && ship.crew !== "") {
+        popupContent += "</p><p>Mannskap: " + "(notert som last " + new Date(ship.crew_obs).toISOString().substr(0,10) + ")";
+      }
+      if(jo.cargo !== undefined && jo.cargo !== "NONE" && jo.cargo !== "") {
+        popupContent += "</p><p>Last: " + jo.cargo + " (notert som last for denne reisen)";
+      } else if(ship.cargo !== undefined && ship.cargo !== "NONE" && ship.cargo !== "") {
+        popupContent += "</p><p>Last: " + ship.cargo + " (notert som last " + new Date(ship.cargo_obs).toISOString().substr(0,10) + ")";
+      }
+      popupContent += "</p></div>"
       new_marker.bindPopup(popupContent);
 
       new_marker.addTo(shipLayer);

@@ -47,8 +47,8 @@ body {
     body header #slower_btn {
       background-image: url(../graphics/slower_btn.png); }
     body header button:hover {
-      background-color: #2F4BA0;
-      color: #fff; }
+      color: #fff;
+      background-color: #2F4BA0; }
     body header #logo {
       float: left; }
     body header h1 {
