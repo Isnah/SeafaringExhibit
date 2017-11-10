@@ -776,10 +776,6 @@ async function animate_events(data) {
     let this_day_events = [];
     if(current_date.getUTCDate() != previous_date) {
       previous_date = current_date.getUTCDate();
-
-      console.log("date change");
-      console.log(date_string);
-      eventlist.innerHTML = "";
       this_day_events = data.events.filter(function(v) {
         return v.date === date_string;
       });
